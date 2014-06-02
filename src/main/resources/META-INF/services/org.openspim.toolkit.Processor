@@ -1,4 +1,6 @@
 org.openspim.toolkit.preprocess.OmeMetadataStripper
 org.openspim.toolkit.beadremoval.BeadBlotter
+org.openspim.toolkit.TriViewMultiProcessor$SampleExcluder
+org.openspim.toolkit.TriViewMultiProcessor$SampleIsolator
 org.openspim.toolkit.adapters.DefaultSPIMRegistration
 org.openspim.toolkit.adapters.DefaultSPIMFusion
