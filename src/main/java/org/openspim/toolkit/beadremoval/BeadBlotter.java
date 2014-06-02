@@ -21,18 +21,18 @@ public class BeadBlotter extends BeadProcessor
 	public BeadBlotter()
 	{
 	}
-	
+
 	private ImagePlus currentImage;
 	private String currentViewPath;
-	
+
 	@Override
-	public void beginView(File view)
+	public void beginView(Params par, File view)
 	{
 		currentImage = IJ.openImage(currentViewPath = view.getAbsolutePath());
 	}
-	
+
 	@Override
-	public void processBead(Vector3D bead)
+	public boolean processBead(File view, Vector3D bead)
 	{
 		double s = ((Number)sigmaSpinner.getValue()).doubleValue();
 		int stride = currentImage.getWidth();
@@ -67,10 +67,12 @@ public class BeadBlotter extends BeadProcessor
 				}
 			}
 		}
+		
+		return true;
 	}
 	
 	@Override
-	public void endView()
+	public void endView(File view)
 	{
 		IJ.saveAs(currentImage, "Tiff", currentViewPath);
 		currentImage.close();
@@ -98,9 +100,9 @@ public class BeadBlotter extends BeadProcessor
 			return Math.sqrt(at.distanceSq(center) / (sigma*sigma));
 		}
 	};
-	
+
 	private static double SQRT2PI = Math.sqrt(2*Math.PI);
-	
+
 	private static FillFunction gaussSpherePSF = new FillFunction()
 	{
 		@Override

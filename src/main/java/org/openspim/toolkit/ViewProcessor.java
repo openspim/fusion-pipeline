@@ -26,8 +26,8 @@ public abstract class ViewProcessor implements Processor {
 				@Override
 				public Void call()
 				{
-					ViewProcessor.this.processView(f);
-					
+					ViewProcessor.this.processView(params, f);
+
 					return null;
 				}
 			}));
@@ -50,5 +50,5 @@ public abstract class ViewProcessor implements Processor {
 		IJ.showStatus(String.format("%s: %.2f%%", toString(), overall*100));
 	}
 
-	public abstract void processView(File view);
+	public abstract void processView(Params p, File view);
 }

@@ -99,7 +99,7 @@ public class OmeMetadataStripper extends ViewProcessor {
 	}
 	
 	@Override
-	public void processView(File view) {
+	public void processView(Params par, File view) {
 		if(backup.isSelected() && autoskip.isSelected() && (new File(new File(view.getParentFile(), "backup"), view.getName()).exists()))
 		{
 			IJ.log("Backup of view " + view.getName() + " already exists; skipping.");
