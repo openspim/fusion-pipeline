@@ -33,7 +33,7 @@ import ij.IJ;
 import ij.Macro;
 import ij.plugin.PlugIn;
 
-public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
+public class Fusion_Pipeline implements PlugIn {
 	private static final long serialVersionUID = -6998219292878544044L;
 
 	public void showAbout() {
@@ -42,11 +42,11 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 
 	@Override
 	public void run(String arg0) {
-		setVisible(true);
+		gui.setVisible(true);
 
 		if(!doProcessing)
 			return;
-		
+
 		Processor.Params params = new Processor.Params();
 		params.invokeOn = Executors.newFixedThreadPool(((Number)threads.getValue()).intValue());
 		params.spec = OpenSPIMToolkit.readSpecifierFields(specForm);
@@ -57,9 +57,9 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 		params.threshold = OpenSPIMToolkit.RegField.THRESHOLD.getDoubleValue();
 		params.xyUmPerPix = OpenSPIMToolkit.RegField.PIXEL_SIZE_XY.getDoubleValue();
 		params.zUmPerPix = OpenSPIMToolkit.RegField.PIXEL_SIZE_Z.getDoubleValue();
-		
+
 		params.progressScale = 1 / (float)(preproc.countRHS());
-		
+
 		try {
 			IJ.log("~~~~~~~~~~~~~~~~ BEGIN PREPROCESS STAGE ~~~~~~~~~~~~~~~~\n");
 
@@ -112,12 +112,12 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 		}
 	}
 	
-	private Map<String, Component> specForm, manRegForm;
-	private boolean doProcessing;
-	private SortableDualList<Processor> preproc, prereg, prefuse, postproc;
-	private JComboBox seg, reg, fuse;
-	private JSpinner threads;
-	private JCheckBox archipelago;
+	private static Map<String, Component> specForm, manRegForm;
+	private static boolean doProcessing;
+	private static SortableDualList<Processor> preproc, prereg, prefuse, postproc;
+	private static JComboBox seg, reg, fuse;
+	private static JSpinner threads;
+	private static JCheckBox archipelago;
 
 	private static ServiceLoader<Processor> procs = ServiceLoader.load(Processor.class);
 
@@ -131,7 +131,7 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 		return ret;
 	}
 	
-	private void configureProcessor(Component source, Processor cfg)
+	private static void configureProcessor(Component source, Processor cfg)
 	{
 		if(cfg == null)
 		{
@@ -147,7 +147,7 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 			return;
 		}
 
-		JDialog dlg = new JDialog(this, "Configure " + cfg.toString());
+		JDialog dlg = new JDialog(gui, "Configure " + cfg.toString());
 		dlg.getContentPane().add(cfg.getControlPanel());
 		dlg.pack();
 		java.awt.Point loc = source.getLocationOnScreen();
@@ -156,7 +156,7 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 		dlg.setVisible(true);
 	}
 	
-	private JButton configButton(final Callable<Processor> source)
+	private static JButton configButton(final Callable<Processor> source)
 	{
 		JButton ret = new JButton("Configure...");
 		
@@ -198,19 +198,24 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 		};
 	}
 
+	private static JDialog gui = null;
+
 	public Fusion_Pipeline()
 	{
-		super((JDialog)null, "OpenSPIM Toolkit: Fusion Pipeline");
+		if(gui != null)
+			return;
 		
-		getRootPane().setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-		setLayout(new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS));
+		gui = new JDialog((JDialog)null, "OpenSPIM Toolkit: Fusion Pipeline");
+		
+		gui.getRootPane().setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+		gui.setLayout(new BoxLayout(gui.getContentPane(), BoxLayout.PAGE_AXIS));
 		
 		JButton goBtn = new JButton("Process");
-		goBtn.addActionListener(this);
+		goBtn.addActionListener(listener);
 		JButton cancelBtn = new JButton("Cancel");
-		cancelBtn.addActionListener(this);
+		cancelBtn.addActionListener(listener);
 		
-		LayoutUtils.addAll(getContentPane(),
+		LayoutUtils.addAll(gui.getContentPane(),
 			LayoutUtils.vertPanel("Processing Options",
 				LayoutUtils.form(
 					"Thread Pool Size:", threads = new JSpinner(new SpinnerNumberModel(Runtime.getRuntime().availableProcessors(), 1, 10*Runtime.getRuntime().availableProcessors(), 1)),
@@ -269,11 +274,11 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 
 		archipelago.setEnabled(false);
 		
-		pack();
+		gui.pack();
 
-		setModal(true);
+		gui.setModal(true);
 		
-		getRootPane().registerKeyboardAction(
+		gui.getRootPane().registerKeyboardAction(
 			new ActionListener()
 			{
 				@Override
@@ -285,7 +290,7 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 		);
 	}
 	
-	private void cancelDialog()
+	private static void cancelDialog()
 	{
 		Macro.setOptions(OpenSPIMToolkit.RegField.getMacroOptions(
 			OpenSPIMToolkit.RegField.PATH,
@@ -294,23 +299,25 @@ public class Fusion_Pipeline extends JDialog implements PlugIn, ActionListener {
 			OpenSPIMToolkit.RegField.ANGLES
 		));
 
-		setVisible(false);
+		gui.setVisible(false);
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent ae) {
-		if(ae.getActionCommand() == "Process") {
-			OpenSPIMToolkit.readSpecifierFields(specForm);
+	protected static ActionListener listener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent ae) {
+			if(ae.getActionCommand() == "Process") {
+				OpenSPIMToolkit.readSpecifierFields(specForm);
+			}
+			
+			if(ae.getActionCommand() != "Process")
+			{
+				cancelDialog();
+			}
+			else
+			{
+				doProcessing = true; // do stuff!
+				gui.setVisible(false);
+			}
 		}
-		
-		if(ae.getActionCommand() != "Process")
-		{
-			cancelDialog();
-		}
-		else
-		{
-			doProcessing = true; // do stuff!
-			setVisible(false);
-		}
-	}
+	};
 }
