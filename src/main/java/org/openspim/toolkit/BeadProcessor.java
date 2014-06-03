@@ -20,27 +20,32 @@ public abstract class BeadProcessor extends ViewProcessor {
 		// Important note: ViewProcessor already wraps this method in a thread!
 		beginView(par, view);
 
-		File beads = new File(OpenSPIMToolkit.getRegistrationDirectory(view), view.getName() + ".beads.txt");
-		beads.renameTo(new File(beads.getParentFile(), view.getName() + ".beads.unfiltered.txt"));
-
 		File outputFile = new File(OpenSPIMToolkit.getRegistrationDirectory(view), view.getName() + ".beads.txt");
+		File oldBeadsFile = new File(OpenSPIMToolkit.getRegistrationDirectory(view), view.getName() + ".beads.unfiltered.txt");
 
+		if(oldBeadsFile.exists() && !oldBeadsFile.delete())
+		{
+			IJ.log("Couldn't remove old registration file backup for view " + view.getName() + "");
+			return;
+		}
+
+		if(!outputFile.renameTo(oldBeadsFile))
+		{
+			IJ.log("Couldn't backup unfiltered beads for view " + view.getName() + "");
+			return;
+		}
+
+		int n = 0, kept = 0;
 		try
 		{
-			if(!beads.exists() || !outputFile.createNewFile())
-			{
-				IJ.log("Couldn't read beads for view " + view.getName() + "");
-				return;
-			}
+			BufferedReader readIn = new BufferedReader(new FileReader(oldBeadsFile));
+			BufferedWriter writeOut = new BufferedWriter(new FileWriter(outputFile));
 
-			BufferedReader lines = new BufferedReader(new FileReader(beads));
-			BufferedWriter out = new BufferedWriter(new FileWriter(outputFile));
+			writeOut.write(readIn.readLine()); // Header line
+			writeOut.newLine();
 
-			out.write(lines.readLine()); // Header line
-
-			int n = 0;
 			String line = null;
-			while((line = lines.readLine()) != null)
+			while((line = readIn.readLine()) != null)
 			{
 				Scanner lineScanner = new Scanner(line);
 
@@ -49,14 +54,18 @@ public abstract class BeadProcessor extends ViewProcessor {
 				Vector3D bead = new Vector3D(lineScanner.nextDouble(), lineScanner.nextDouble(), lineScanner.nextDouble());
 
 				if(processBead(view, bead))
-					out.write(lines.readLine());
+				{
+					++kept;
+					writeOut.write(line);
+					writeOut.newLine();
+				}
 
-				reportProgress(view, (float)n / ((float)n + 1.0f)); ++n;
+				++n; reportProgress(view, (float)(n*n) / ((float)(n*(n + 4.0f)))); // Eh.
 				lineScanner.close();
 			}
 
-			lines.close();
-			out.close();
+			readIn.close();
+			writeOut.close();
 		}
 		catch(FileNotFoundException fnfe)
 		{
@@ -68,6 +77,8 @@ public abstract class BeadProcessor extends ViewProcessor {
 		}
 
 		endView(view);
+
+		IJ.log("Bead processor: Processed " + n + " beads; remaining: " + kept);
 	}
 
 	@Override

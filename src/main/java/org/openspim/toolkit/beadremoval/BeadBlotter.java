@@ -24,10 +24,12 @@ public class BeadBlotter extends BeadProcessor
 
 	private ImagePlus currentImage;
 	private String currentViewPath;
+	private double zperxy;
 
 	@Override
 	public void beginView(Params par, File view)
 	{
+		zperxy = par.zUmPerPix / par.xyUmPerPix;
 		currentImage = IJ.openImage(currentViewPath = view.getAbsolutePath());
 	}
 
@@ -40,7 +42,6 @@ public class BeadBlotter extends BeadProcessor
 		double min = ((Number)minSpinner.getValue()).doubleValue();
 		double max = ((Number)maxSpinner.getValue()).doubleValue();
 		double ds = s*dsSlider.getValue();
-		double zperxy = ((Number)zPerXYSpinner.getValue()).doubleValue();
 
 		for(int z = Math.max((int)(bead.getZ() - ds*zperxy), 1); z <= Math.min((int)(bead.getZ() + ds*zperxy), currentImage.getStackSize()); ++z)
 		{
@@ -148,7 +149,6 @@ public class BeadBlotter extends BeadProcessor
 	public static JSpinner sigmaSpinner =  new JSpinner(new SpinnerNumberModel(1.0, 0.1, 100.0, 0.1));
 	public static JSpinner minSpinner = new JSpinner(new SpinnerNumberModel(0.01, 0.0, 1.0, 0.01));
 	public static JSpinner maxSpinner = new JSpinner(new SpinnerNumberModel(1.0, 0.0, 1.0, 0.01));
-	public static JSpinner zPerXYSpinner = new JSpinner(new SpinnerNumberModel(0.652, 0.001, 1, 0.001));
 	public static JSlider dsSlider = new JSlider(1, 64, 8);
 	public static JComboBox modeCombo = new JComboBox(BlotMode.values());
 
@@ -159,8 +159,7 @@ public class BeadBlotter extends BeadProcessor
 			"Bead Width (Sigma)", sigmaSpinner,
 			"Min. Brightness", minSpinner,
 			"Max. Brightness", maxSpinner,
-			"Domain Multiple (sigmas)", dsSlider,
-			"Z per X/Y", zPerXYSpinner
+			"Domain Multiple (sigmas)", dsSlider
 		);
 	}
 
