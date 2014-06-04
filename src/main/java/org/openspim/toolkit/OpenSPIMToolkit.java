@@ -305,6 +305,10 @@ public class OpenSPIMToolkit implements PlugIn {
 	public static File getRegistrationDirectory(File viewpath) {
 		return new File(viewpath.getParent(), "registration");
 	}
+	
+	public static File getOutputDirectory(File viewpath) {
+		return new File(viewpath.getParent(), "output");
+	}
 
 	public static List<String> readAllLines(File path) throws IOException {
 		List<String> out = new LinkedList<String>();
